@@ -1,34 +1,23 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { CommonResponse, ResponseDataPromise } from 'src/utils/response.utils';
+import { SignInUserDto } from 'src/users/dto/signin-user.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+    /**User sign up */
+    @Post('signup')
+    async signUp(@Body() createUserDto: CreateUserDto): Promise<CommonResponse> {
+      return await this.authService.signUp(createUserDto);
+    }
+  /**User sign in */
+  @Post('signin')
+  async signIn(@Body() signInUserDto: SignInUserDto): Promise<ResponseDataPromise> {
+    return await this.authService.signIn(signInUserDto);
   }
 }

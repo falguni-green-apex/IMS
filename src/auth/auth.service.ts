@@ -1,26 +1,36 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { HttpStatus, Inject, Injectable, forwardRef } from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { CommonResponse, ResponseDataPromise } from 'src/utils/response.utils';
+import { SignInUserDto } from 'src/users/dto/signin-user.dto';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  constructor(
+    @Inject(forwardRef(() => UsersService)) private readonly userService: UsersService,
+    ) { }
+  
+    /**New user sign up */
+    async signUp(data: CreateUserDto): Promise<CommonResponse> {
+      try {
+          const result = await this.userService.createNewUser(data);
+          if (result.statusCode === HttpStatus.CREATED) {
+              return result;
+          }
+      } catch (error) {
+          throw error;
+      }
+    }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
+      /**User sign in */
+      async signIn(signInUserDto: SignInUserDto): Promise<ResponseDataPromise> {
+        try {
+            const result = await this.userService.signIn(signInUserDto);
+            if (result.statusCode === HttpStatus.OK) {
+                return result;
+            }
+        } catch (error) {
+            throw error;
+        }
+      }
 }
