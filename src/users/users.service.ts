@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './entities/user.entity';
+import { User, UserRolesEnum } from './entities/user.entity';
 import * as  bcrypt from 'bcryptjs'
 import { Model } from 'mongoose';
 import { SignInUserDto } from './dto/signin-user.dto';
@@ -88,6 +88,111 @@ export class UsersService {
             },
             token
           }
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+   /**Get all users */
+   async getAllUsers(): Promise<ResponseDataPromise> {
+    try {
+      const userList = await this.userModel.find({ is_deleted: { "$ne": true }, "role": `${UserRolesEnum.USER}` }).select(['firstName', 'lastName', 'email', 'role', 'is_deleted']);
+      if (userList.length) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'Success',
+          data: userList
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**Get user details by id */
+  async getUserDetails(id: string): Promise<ResponseDataPromise> {
+    try {
+      const user = await this.getUserById(id);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+      return {
+        statusCode: HttpStatus.FOUND,
+        message: 'Success',
+        data: {
+          userData: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            is_deleted: user.is_deleted
+          }
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**Edit user details */
+  async editUser(id: string, data: UpdateUserDto): Promise<ResponseDataPromise> {
+    try {
+      const user = await this.getUserById(id);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+      if (user) {
+        const updateData = {
+          firstName: data?.firstName ? data.firstName : user.firstName,
+          lastName: data?.lastName ? data.lastName : user.lastName
+        }
+        const result = await this.userModel.updateOne({ _id: id }, updateData);
+        if (result.acknowledged) {
+          return {
+            statusCode: HttpStatus.OK,
+            message: 'User updated successfully',
+            data: {
+              userData: {
+                id: user.id,
+                firstName: data.firstName || user.firstName,
+                lastName: data.lastName || user.lastName,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**Common fun to get user by id */
+  async getUserById(id: string) {
+    try {
+      const user = await this.userModel.findOne({ _id: id, "is_deleted": { "$ne": true } });
+      if (user) {
+        return user;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**Delete user [Soft delete] */
+  async deleteUser(id: string) {
+    try {
+      const user = await this.getUserById(id);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+      const result = await this.userModel.updateOne({ _id: id }, { is_deleted: true })
+      if (result.acknowledged) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'User has been deleted successfully',
         }
       }
     } catch (error) {
